@@ -1,0 +1,547 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        ('email' in request.auth.token &&
+         'email_verified' in request.auth.token &&
+         request.auth.token.email == 'mnurkhasani43@gmail.com' &&
+         request.auth.token.email_verified == true)
+      );
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
+             data.role in ['PETANI', 'PEMBELI', 'SUPPLIER', 'MITRA_PENGIRIMAN'] &&
+             data.verifiedSeller is bool &&
+             data.verifiedSupplier is bool &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 300)) &&
+             (!('city' in data) || (data.city is string && data.city.size() <= 100)) &&
+             (!('latitude' in data) || data.latitude is number) &&
+             (!('longitude' in data) || data.longitude is number) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidHydroPlant(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.cropType is string && data.cropType.size() >= 1 && data.cropType.size() <= 60 &&
+             data.systemType is string && data.systemType.size() >= 1 && data.systemType.size() <= 60 &&
+             data.holeCount is int && data.holeCount >= 1 && data.holeCount <= 100000 &&
+             data.plantedDateMillis is int && data.plantedDateMillis > 0 &&
+             (!('transplantDateMillis' in data) || data.transplantDateMillis is int) &&
+             data.harvestAgeDays is int && data.harvestAgeDays >= 1 && data.harvestAgeDays <= 365 &&
+             data.status in ['SEMAI', 'VEGETATIF', 'SIAP_PANEN', 'PANEN_SELESAI'] &&
+             data.phMin is number && data.phMin >= 0 && data.phMin <= 14 &&
+             data.phMax is number && data.phMax >= data.phMin && data.phMax <= 14 &&
+             data.ecMin is number && data.ecMin >= 0 && data.ecMin <= 20 &&
+             data.ecMax is number && data.ecMax >= data.ecMin && data.ecMax <= 20 &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMaintenanceSchedule(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             (!('plantId' in data) || (data.plantId is string && data.plantId.size() <= 128)) &&
+             (!('plantName' in data) || (data.plantName is string && data.plantName.size() <= 100)) &&
+             data.taskType is string && data.taskType.size() >= 1 && data.taskType.size() <= 60 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.dueDateMillis is int && data.dueDateMillis > 0 &&
+             data.completed is bool &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPlantMonitoring(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.plantId is string && data.plantId.size() >= 1 && data.plantId.size() <= 128 &&
+             data.plantName is string && data.plantName.size() >= 1 && data.plantName.size() <= 100 &&
+             data.ph is number && data.ph >= 0 && data.ph <= 14 &&
+             data.ec is number && data.ec >= 0 && data.ec <= 20 &&
+             data.tds is int && data.tds >= 0 && data.tds <= 10000 &&
+             data.waterTemp is number && data.waterTemp >= 0 && data.waterTemp <= 80 &&
+             data.ambientTemp is number && data.ambientTemp >= 0 && data.ambientTemp <= 80 &&
+             data.heightCm is number && data.heightCm >= 0 && data.heightCm <= 1000 &&
+             (!('rootCondition' in data) || (data.rootCondition is string && data.rootCondition.size() <= 100)) &&
+             (!('plantCondition' in data) || (data.plantCondition is string && data.plantCondition.size() <= 100)) &&
+             data.healthStatus in ['NORMAL', 'PERLU_DIPERIKSA', 'PERINGATAN'] &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.recordedAtMillis is int && data.recordedAtMillis > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidHarvestRecord(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             (!('plantId' in data) || (data.plantId is string && data.plantId.size() <= 128)) &&
+             data.plantName is string && data.plantName.size() >= 1 && data.plantName.size() <= 100 &&
+             data.cropType is string && data.cropType.size() >= 1 && data.cropType.size() <= 60 &&
+             data.cycleLabel is string && data.cycleLabel.size() >= 1 && data.cycleLabel.size() <= 80 &&
+             data.weightKg is number && data.weightKg >= 0 && data.weightKg <= 100000 &&
+             data.holeCount is int && data.holeCount >= 1 && data.holeCount <= 100000 &&
+             data.durationDays is int && data.durationDays >= 1 && data.durationDays <= 365 &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.harvestedAtMillis is int && data.harvestedAtMillis > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidExpense(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.entryType in ['MODAL', 'PENGELUARAN'] &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.amount is int && data.amount >= 0 && data.amount <= 10000000000 &&
+             (!('cycleLabel' in data) || (data.cycleLabel is string && data.cycleLabel.size() <= 80)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.dateMillis is int && data.dateMillis > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidRevenue(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 60 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.amount is int && data.amount >= 0 && data.amount <= 10000000000 &&
+             (!('orderId' in data) || (data.orderId is string && data.orderId.size() <= 128)) &&
+             (!('cycleLabel' in data) || (data.cycleLabel is string && data.cycleLabel.size() <= 80)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.dateMillis is int && data.dateMillis > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCartItem(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.productId is string && data.productId.size() >= 1 && data.productId.size() <= 128 &&
+             data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 120 &&
+             data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 &&
+             data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 100 &&
+             data.mainCategory is string && data.mainCategory.size() >= 1 && data.mainCategory.size() <= 40 &&
+             data.unitPrice is int && data.unitPrice >= 0 && data.unitPrice <= 1000000000 &&
+             data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 30 &&
+             data.quantity is int && data.quantity >= 1 && data.quantity <= 10000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidNotification(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.body is string && data.body.size() >= 1 && data.body.size() <= 500 &&
+             data.type is string && data.type.size() >= 1 && data.type.size() <= 40 &&
+             data.read is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidProduct(data) {
+      return data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 &&
+             data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 100 &&
+             data.sellerArea is string && data.sellerArea.size() >= 1 && data.sellerArea.size() <= 100 &&
+             data.sellerLat is number &&
+             data.sellerLng is number &&
+             data.mainCategory in ['HASIL_PANEN', 'PERLENGKAPAN', 'JASA'] &&
+             data.subCategory is string && data.subCategory.size() >= 1 && data.subCategory.size() <= 60 &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 1000)) &&
+             data.price is int && data.price >= 0 && data.price <= 1000000000 &&
+             data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 30 &&
+             data.stock is int && data.stock >= 0 && data.stock <= 1000000 &&
+             (!('freshnessStatus' in data) || (data.freshnessStatus is string && data.freshnessStatus.size() <= 60)) &&
+             (!('deliveryMethods' in data) || (data.deliveryMethods is string && data.deliveryMethods.size() <= 120)) &&
+             (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
+             (!('reviewCount' in data) || (data.reviewCount is int && data.reviewCount >= 0)) &&
+             data.promoted is bool &&
+             data.active is bool &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidOrder(data) {
+      return data.buyerId is string && data.buyerId.size() >= 1 && data.buyerId.size() <= 128 &&
+             data.buyerName is string && data.buyerName.size() >= 1 && data.buyerName.size() <= 100 &&
+             data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 &&
+             data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 100 &&
+             (!('courierId' in data) || (data.courierId is string && data.courierId.size() <= 128)) &&
+             data.mainCategory is string && data.mainCategory.size() >= 1 && data.mainCategory.size() <= 40 &&
+             data.itemsSummary is string && data.itemsSummary.size() >= 1 && data.itemsSummary.size() <= 500 &&
+             data.subtotal is int && data.subtotal >= 0 &&
+             data.shippingFee is int && data.shippingFee >= 0 &&
+             data.serviceFee is int && data.serviceFee >= 0 &&
+             data.commissionAmount is int && data.commissionAmount >= 0 &&
+             data.totalAmount is int && data.totalAmount >= 0 &&
+             data.paymentMethod is string && data.paymentMethod.size() >= 1 && data.paymentMethod.size() <= 60 &&
+             data.paymentStatus in ['MENUNGGU', 'TERKONFIRMASI', 'SIMULASI_DEMO'] &&
+             data.orderStatus in ['MENUNGGU_KONFIRMASI', 'DIPROSES', 'DIKIRIM', 'SELESAI', 'DIBATALKAN'] &&
+             (!('deliveryMethod' in data) || (data.deliveryMethod is string && data.deliveryMethod.size() <= 80)) &&
+             data.deliveryAddress is string && data.deliveryAddress.size() >= 1 && data.deliveryAddress.size() <= 300 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidWholesale(data) {
+      return data.buyerId is string && data.buyerId.size() >= 1 && data.buyerId.size() <= 128 &&
+             data.buyerCompany is string && data.buyerCompany.size() >= 1 && data.buyerCompany.size() <= 120 &&
+             data.buyerType is string && data.buyerType.size() >= 1 && data.buyerType.size() <= 60 &&
+             data.cropNeeded is string && data.cropNeeded.size() >= 1 && data.cropNeeded.size() <= 80 &&
+             data.quantityKg is int && data.quantityKg >= 1 && data.quantityKg <= 1000000 &&
+             data.targetPricePerKg is int && data.targetPricePerKg >= 0 &&
+             data.deliverySchedule is string && data.deliverySchedule.size() >= 1 && data.deliverySchedule.size() <= 100 &&
+             data.area is string && data.area.size() >= 1 && data.area.size() <= 100 &&
+             (!('farmerId' in data) || (data.farmerId is string && data.farmerId.size() <= 128)) &&
+             (!('farmerOfferPrice' in data) || (data.farmerOfferPrice is int && data.farmerOfferPrice >= 0)) &&
+             data.status in ['TERBUKA', 'PENAWARAN', 'DISEPAKATI', 'SELESAI'] &&
+             data.open is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidForumPost(data) {
+      return data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 100 &&
+             data.title is string && data.title.size() >= 3 && data.title.size() <= 160 &&
+             data.content is string && data.content.size() >= 3 && data.content.size() <= 2000 &&
+             data.topic is string && data.topic.size() >= 1 && data.topic.size() <= 60 &&
+             data.replyCount is int && data.replyCount >= 0 &&
+             data.visible is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidAdminSetting(data) {
+      return data.marketplaceCommissionPct is number && data.marketplaceCommissionPct >= 0 && data.marketplaceCommissionPct <= 50 &&
+             data.supplierCommissionPct is number && data.supplierCommissionPct >= 0 && data.supplierCommissionPct <= 50 &&
+             data.deliveryCommissionPct is number && data.deliveryCommissionPct >= 0 && data.deliveryCommissionPct <= 50 &&
+             data.consultationCommissionPct is number && data.consultationCommissionPct >= 0 && data.consultationCommissionPct <= 50 &&
+             data.wholesaleCommissionPct is number && data.wholesaleCommissionPct >= 0 && data.wholesaleCommissionPct <= 50 &&
+             data.publicConfig is bool &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().verifiedSeller == false &&
+                       incoming().verifiedSupplier == false &&
+                       incoming().keys().hasAll(['userId', 'fullName', 'role', 'verifiedSeller', 'verifiedSupplier', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'fullName', 'email', 'phone', 'role', 'address', 'city', 'latitude', 'longitude', 'photoUrl', 'verifiedSeller', 'verifiedSupplier', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isValidId(userId) &&
+                       isSignedIn() &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt && (
+                         isAdmin() || (
+                           isOwner(userId) &&
+                           incoming().verifiedSeller == existing().verifiedSeller &&
+                           incoming().verifiedSupplier == existing().verifiedSupplier &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['fullName', 'email', 'phone', 'role', 'address', 'city', 'latitude', 'longitude', 'photoUrl', 'updatedAt'])
+                         )
+                       );
+
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+
+      match /plants/{plantId} {
+        allow get: if isValidId(userId) && isValidId(plantId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+        allow create: if isValidId(userId) && isValidId(plantId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'cropType', 'systemType', 'holeCount', 'plantedDateMillis', 'harvestAgeDays', 'status', 'phMin', 'phMax', 'ecMin', 'ecMax', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'cropType', 'systemType', 'holeCount', 'plantedDateMillis', 'transplantDateMillis', 'harvestAgeDays', 'status', 'phMin', 'phMax', 'ecMin', 'ecMax', 'photoUrl', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidHydroPlant(incoming());
+        allow update: if isValidId(userId) && isValidId(plantId) &&
+                         isOwner(userId) &&
+                         isValidHydroPlant(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'cropType', 'systemType', 'holeCount', 'plantedDateMillis', 'transplantDateMillis', 'harvestAgeDays', 'status', 'phMin', 'phMax', 'ecMin', 'ecMax', 'photoUrl', 'notes', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(plantId) && (isOwner(userId) || isAdmin());
+      }
+
+      match /maintenance_schedules/{scheduleId} {
+        allow get: if isValidId(userId) && isValidId(scheduleId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+        allow create: if isValidId(userId) && isValidId(scheduleId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'taskType', 'title', 'dueDateMillis', 'completed', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'plantId', 'plantName', 'taskType', 'title', 'dueDateMillis', 'completed', 'notes', 'createdAt', 'updatedAt']) &&
+                         isValidMaintenanceSchedule(incoming());
+        allow update: if isValidId(userId) && isValidId(scheduleId) &&
+                         isOwner(userId) &&
+                         isValidMaintenanceSchedule(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['plantId', 'plantName', 'taskType', 'title', 'dueDateMillis', 'completed', 'notes', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(scheduleId) && (isOwner(userId) || isAdmin());
+      }
+
+      match /plant_monitoring/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+        allow create: if isValidId(userId) && isValidId(logId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'plantId', 'plantName', 'ph', 'ec', 'tds', 'waterTemp', 'ambientTemp', 'heightCm', 'healthStatus', 'recordedAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'plantId', 'plantName', 'ph', 'ec', 'tds', 'waterTemp', 'ambientTemp', 'heightCm', 'rootCondition', 'plantCondition', 'healthStatus', 'notes', 'recordedAtMillis', 'createdAt', 'updatedAt']) &&
+                         isValidPlantMonitoring(incoming());
+        allow update: if isValidId(userId) && isValidId(logId) &&
+                         isOwner(userId) &&
+                         isValidPlantMonitoring(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['ph', 'ec', 'tds', 'waterTemp', 'ambientTemp', 'heightCm', 'rootCondition', 'plantCondition', 'healthStatus', 'notes', 'recordedAtMillis', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(logId) && (isOwner(userId) || isAdmin());
+      }
+
+      match /harvests/{harvestId} {
+        allow get: if isValidId(userId) && isValidId(harvestId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+        allow create: if isValidId(userId) && isValidId(harvestId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'plantName', 'cropType', 'cycleLabel', 'weightKg', 'holeCount', 'durationDays', 'harvestedAtMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'plantId', 'plantName', 'cropType', 'cycleLabel', 'weightKg', 'holeCount', 'durationDays', 'notes', 'harvestedAtMillis', 'createdAt', 'updatedAt']) &&
+                         isValidHarvestRecord(incoming());
+        allow update: if isValidId(userId) && isValidId(harvestId) &&
+                         isOwner(userId) &&
+                         isValidHarvestRecord(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['cycleLabel', 'weightKg', 'holeCount', 'durationDays', 'notes', 'harvestedAtMillis', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(harvestId) && (isOwner(userId) || isAdmin());
+      }
+
+      match /expenses/{expenseId} {
+        allow get: if isValidId(userId) && isValidId(expenseId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+        allow create: if isValidId(userId) && isValidId(expenseId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'entryType', 'category', 'title', 'amount', 'dateMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'entryType', 'category', 'title', 'amount', 'cycleLabel', 'notes', 'dateMillis', 'createdAt', 'updatedAt']) &&
+                         isValidExpense(incoming());
+        allow update: if isValidId(userId) && isValidId(expenseId) &&
+                         isOwner(userId) &&
+                         isValidExpense(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['entryType', 'category', 'title', 'amount', 'cycleLabel', 'notes', 'dateMillis', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(expenseId) && (isOwner(userId) || isAdmin());
+      }
+
+      match /revenues/{revenueId} {
+        allow get: if isValidId(userId) && isValidId(revenueId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+        allow create: if isValidId(userId) && isValidId(revenueId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'category', 'title', 'amount', 'dateMillis', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'category', 'title', 'amount', 'orderId', 'cycleLabel', 'notes', 'dateMillis', 'createdAt', 'updatedAt']) &&
+                         isValidRevenue(incoming());
+        allow update: if isValidId(userId) && isValidId(revenueId) &&
+                         isOwner(userId) &&
+                         isValidRevenue(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['category', 'title', 'amount', 'cycleLabel', 'notes', 'dateMillis', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(revenueId) && (isOwner(userId) || isAdmin());
+      }
+
+      match /carts/{cartItemId} {
+        allow get: if isValidId(userId) && isValidId(cartItemId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(cartItemId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'productId', 'productName', 'sellerId', 'sellerName', 'mainCategory', 'unitPrice', 'unit', 'quantity', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'productId', 'productName', 'sellerId', 'sellerName', 'mainCategory', 'unitPrice', 'unit', 'quantity', 'createdAt', 'updatedAt']) &&
+                         isValidCartItem(incoming());
+        allow update: if isValidId(userId) && isValidId(cartItemId) &&
+                         isOwner(userId) &&
+                         isValidCartItem(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['quantity', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(cartItemId) && isOwner(userId);
+      }
+
+      match /notifications/{notificationId} {
+        allow get: if isValidId(userId) && isValidId(notificationId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(notificationId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'body', 'type', 'read', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'body', 'type', 'read', 'createdAt', 'updatedAt']) &&
+                         isValidNotification(incoming());
+        allow update: if isValidId(userId) && isValidId(notificationId) &&
+                         isOwner(userId) &&
+                         isValidNotification(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(notificationId) && isOwner(userId);
+      }
+    }
+
+    match /products/{productId} {
+      allow get: if isValidId(productId) && isSignedIn() && (existing().active == true || existing().sellerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.active == true || resource.data.sellerId == request.auth.uid || isAdmin());
+
+      allow create: if isValidId(productId) &&
+                       isSignedIn() &&
+                       incoming().sellerId == request.auth.uid &&
+                       incoming().keys().hasAll(['sellerId', 'sellerName', 'sellerArea', 'sellerLat', 'sellerLng', 'mainCategory', 'subCategory', 'name', 'price', 'unit', 'stock', 'promoted', 'active', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['sellerId', 'sellerName', 'sellerArea', 'sellerLat', 'sellerLng', 'mainCategory', 'subCategory', 'name', 'description', 'price', 'unit', 'stock', 'freshnessStatus', 'deliveryMethods', 'rating', 'reviewCount', 'promoted', 'active', 'photoUrl', 'createdAt', 'updatedAt']) &&
+                       isValidProduct(incoming());
+
+      allow update: if isValidId(productId) &&
+                       isSignedIn() &&
+                       isValidProduct(incoming()) &&
+                       incoming().sellerId == existing().sellerId &&
+                       incoming().createdAt == existing().createdAt && (
+                         isAdmin() ||
+                         (existing().sellerId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'mainCategory', 'subCategory', 'price', 'unit', 'stock', 'freshnessStatus', 'deliveryMethods', 'promoted', 'active', 'photoUrl', 'sellerArea', 'sellerLat', 'sellerLng', 'updatedAt']))
+                       );
+
+      allow delete: if isValidId(productId) && isSignedIn() && (existing().sellerId == request.auth.uid || isAdmin());
+    }
+
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && isSignedIn() && (existing().buyerId == request.auth.uid || existing().sellerId == request.auth.uid || (existing().courierId == request.auth.uid) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid || resource.data.courierId == request.auth.uid || isAdmin());
+
+      allow create: if isValidId(orderId) &&
+                       isSignedIn() &&
+                       incoming().buyerId == request.auth.uid &&
+                       incoming().orderStatus == 'MENUNGGU_KONFIRMASI' &&
+                       incoming().keys().hasAll(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'mainCategory', 'itemsSummary', 'subtotal', 'shippingFee', 'serviceFee', 'commissionAmount', 'totalAmount', 'paymentMethod', 'paymentStatus', 'orderStatus', 'deliveryAddress', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['buyerId', 'buyerName', 'sellerId', 'sellerName', 'courierId', 'mainCategory', 'itemsSummary', 'subtotal', 'shippingFee', 'serviceFee', 'commissionAmount', 'totalAmount', 'paymentMethod', 'paymentStatus', 'orderStatus', 'deliveryMethod', 'deliveryAddress', 'createdAt', 'updatedAt']) &&
+                       isValidOrder(incoming());
+
+      allow update: if isValidId(orderId) &&
+                       isSignedIn() &&
+                       isValidOrder(incoming()) &&
+                       incoming().buyerId == existing().buyerId &&
+                       incoming().sellerId == existing().sellerId &&
+                       incoming().createdAt == existing().createdAt && (
+                         isAdmin() || (
+                           !(existing().orderStatus in ['SELESAI', 'DIBATALKAN']) && (
+                             (existing().sellerId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['orderStatus', 'courierId', 'updatedAt'])) ||
+                             (existing().buyerId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['orderStatus', 'paymentStatus', 'updatedAt'])) ||
+                             (existing().courierId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['orderStatus', 'updatedAt']))
+                           )
+                         )
+                       );
+
+      allow delete: if isValidId(orderId) && isAdmin();
+    }
+
+    match /wholesale_requests/{requestId} {
+      allow get: if isValidId(requestId) && isSignedIn() && (existing().open == true || existing().buyerId == request.auth.uid || existing().farmerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.open == true || resource.data.buyerId == request.auth.uid || resource.data.farmerId == request.auth.uid || isAdmin());
+
+      allow create: if isValidId(requestId) &&
+                       isSignedIn() &&
+                       incoming().buyerId == request.auth.uid &&
+                       incoming().status == 'TERBUKA' &&
+                       incoming().keys().hasAll(['buyerId', 'buyerCompany', 'buyerType', 'cropNeeded', 'quantityKg', 'targetPricePerKg', 'deliverySchedule', 'area', 'status', 'open', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['buyerId', 'buyerCompany', 'buyerType', 'cropNeeded', 'quantityKg', 'targetPricePerKg', 'deliverySchedule', 'area', 'farmerId', 'farmerOfferPrice', 'status', 'open', 'createdAt', 'updatedAt']) &&
+                       isValidWholesale(incoming());
+
+      allow update: if isValidId(requestId) &&
+                       isSignedIn() &&
+                       isValidWholesale(incoming()) &&
+                       incoming().buyerId == existing().buyerId &&
+                       incoming().createdAt == existing().createdAt && (
+                         isAdmin() || (
+                           existing().status != 'SELESAI' && (
+                             (existing().buyerId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'open', 'deliverySchedule', 'updatedAt'])) ||
+                             (existing().open == true && incoming().farmerId == request.auth.uid && incoming().status == 'PENAWARAN' && incoming().diff(existing()).affectedKeys().hasOnly(['farmerId', 'farmerOfferPrice', 'status', 'updatedAt']))
+                           )
+                         )
+                       );
+
+      allow delete: if isValidId(requestId) && isSignedIn() && (existing().buyerId == request.auth.uid || isAdmin());
+    }
+
+    match /forum_posts/{postId} {
+      allow get: if isValidId(postId) && isSignedIn() && (existing().visible == true || existing().authorId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.visible == true || resource.data.authorId == request.auth.uid || isAdmin());
+
+      allow create: if isValidId(postId) &&
+                       isSignedIn() &&
+                       incoming().authorId == request.auth.uid &&
+                       incoming().visible == true &&
+                       incoming().keys().hasAll(['authorId', 'authorName', 'title', 'content', 'topic', 'replyCount', 'visible', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['authorId', 'authorName', 'title', 'content', 'topic', 'replyCount', 'visible', 'createdAt', 'updatedAt']) &&
+                       isValidForumPost(incoming());
+
+      allow update: if isValidId(postId) &&
+                       isSignedIn() &&
+                       isValidForumPost(incoming()) &&
+                       incoming().authorId == existing().authorId &&
+                       incoming().createdAt == existing().createdAt && (
+                         isAdmin() ||
+                         (existing().authorId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'topic', 'updatedAt']))
+                       );
+
+      allow delete: if isValidId(postId) && isSignedIn() && (existing().authorId == request.auth.uid || isAdmin());
+    }
+
+    match /admin_settings/{settingId} {
+      allow get: if isValidId(settingId) && isSignedIn() && (existing().publicConfig == true || isAdmin());
+      allow list: if isSignedIn() && (resource.data.publicConfig == true || isAdmin());
+      allow create, update: if isValidId(settingId) && isAdmin() && isValidAdminSetting(incoming());
+      allow delete: if isValidId(settingId) && isAdmin();
+    }
+  }
+}

@@ -1,0 +1,351 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil pengguna HydroGrow dengan peran dan lokasi",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["PETANI", "PEMBELI", "SUPPLIER", "MITRA_PENGIRIMAN"] },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "photoUrl": { "type": "string" },
+        "verifiedSeller": { "type": "boolean" },
+        "verifiedSupplier": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fullName", "role", "verifiedSeller", "verifiedSupplier", "createdAt", "updatedAt"]
+    },
+    "HydroPlant": {
+      "title": "HydroPlant",
+      "description": "Data tanaman hidroponik aktif",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "cropType": { "type": "string" },
+        "systemType": { "type": "string" },
+        "holeCount": { "type": "integer" },
+        "plantedDateMillis": { "type": "integer" },
+        "transplantDateMillis": { "type": "integer" },
+        "harvestAgeDays": { "type": "integer" },
+        "status": { "type": "string", "enum": ["SEMAI", "VEGETATIF", "SIAP_PANEN", "PANEN_SELESAI"] },
+        "phMin": { "type": "number" },
+        "phMax": { "type": "number" },
+        "ecMin": { "type": "number" },
+        "ecMax": { "type": "number" },
+        "photoUrl": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "cropType", "systemType", "holeCount", "plantedDateMillis", "harvestAgeDays", "status", "phMin", "phMax", "ecMin", "ecMax", "createdAt", "updatedAt"]
+    },
+    "MaintenanceSchedule": {
+      "title": "MaintenanceSchedule",
+      "description": "Jadwal perawatan kebun hidroponik",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "plantId": { "type": "string" },
+        "plantName": { "type": "string" },
+        "taskType": { "type": "string" },
+        "title": { "type": "string" },
+        "dueDateMillis": { "type": "integer" },
+        "completed": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "taskType", "title", "dueDateMillis", "completed", "createdAt", "updatedAt"]
+    },
+    "PlantMonitoringLog": {
+      "title": "PlantMonitoringLog",
+      "description": "Catatan monitoring pH, EC, TDS, suhu, dan pertumbuhan",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "plantId": { "type": "string" },
+        "plantName": { "type": "string" },
+        "ph": { "type": "number" },
+        "ec": { "type": "number" },
+        "tds": { "type": "integer" },
+        "waterTemp": { "type": "number" },
+        "ambientTemp": { "type": "number" },
+        "heightCm": { "type": "number" },
+        "rootCondition": { "type": "string" },
+        "plantCondition": { "type": "string" },
+        "healthStatus": { "type": "string", "enum": ["NORMAL", "PERLU_DIPERIKSA", "PERINGATAN"] },
+        "notes": { "type": "string" },
+        "recordedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "plantId", "plantName", "ph", "ec", "tds", "waterTemp", "ambientTemp", "heightCm", "healthStatus", "recordedAtMillis", "createdAt", "updatedAt"]
+    },
+    "HarvestRecord": {
+      "title": "HarvestRecord",
+      "description": "Riwayat panen budidaya per siklus",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "plantId": { "type": "string" },
+        "plantName": { "type": "string" },
+        "cropType": { "type": "string" },
+        "cycleLabel": { "type": "string" },
+        "weightKg": { "type": "number" },
+        "holeCount": { "type": "integer" },
+        "durationDays": { "type": "integer" },
+        "notes": { "type": "string" },
+        "harvestedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "plantName", "cropType", "cycleLabel", "weightKg", "holeCount", "durationDays", "harvestedAtMillis", "createdAt", "updatedAt"]
+    },
+    "MarketplaceProduct": {
+      "title": "MarketplaceProduct",
+      "description": "Produk hasil panen, perlengkapan, dan jasa hidroponik",
+      "type": "object",
+      "properties": {
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "sellerArea": { "type": "string" },
+        "sellerLat": { "type": "number" },
+        "sellerLng": { "type": "number" },
+        "mainCategory": { "type": "string", "enum": ["HASIL_PANEN", "PERLENGKAPAN", "JASA"] },
+        "subCategory": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "integer" },
+        "unit": { "type": "string" },
+        "stock": { "type": "integer" },
+        "freshnessStatus": { "type": "string" },
+        "deliveryMethods": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "integer" },
+        "promoted": { "type": "boolean" },
+        "active": { "type": "boolean" },
+        "photoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "sellerName", "sellerArea", "sellerLat", "sellerLng", "mainCategory", "subCategory", "name", "price", "unit", "stock", "promoted", "active", "createdAt", "updatedAt"]
+    },
+    "MarketplaceOrder": {
+      "title": "MarketplaceOrder",
+      "description": "Pesanan marketplace beserta rincian pembayaran dan komisi",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "buyerName": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "courierId": { "type": "string" },
+        "mainCategory": { "type": "string" },
+        "itemsSummary": { "type": "string" },
+        "subtotal": { "type": "integer" },
+        "shippingFee": { "type": "integer" },
+        "serviceFee": { "type": "integer" },
+        "commissionAmount": { "type": "integer" },
+        "totalAmount": { "type": "integer" },
+        "paymentMethod": { "type": "string" },
+        "paymentStatus": { "type": "string", "enum": ["MENUNGGU", "TERKONFIRMASI", "SIMULASI_DEMO"] },
+        "orderStatus": { "type": "string", "enum": ["MENUNGGU_KONFIRMASI", "DIPROSES", "DIKIRIM", "SELESAI", "DIBATALKAN"] },
+        "deliveryMethod": { "type": "string" },
+        "deliveryAddress": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "buyerName", "sellerId", "sellerName", "mainCategory", "itemsSummary", "subtotal", "shippingFee", "serviceFee", "commissionAmount", "totalAmount", "paymentMethod", "paymentStatus", "orderStatus", "deliveryAddress", "createdAt", "updatedAt"]
+    },
+    "FinancialExpense": {
+      "title": "FinancialExpense",
+      "description": "Catatan modal dan pengeluaran usaha hidroponik",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "entryType": { "type": "string", "enum": ["MODAL", "PENGELUARAN"] },
+        "category": { "type": "string" },
+        "title": { "type": "string" },
+        "amount": { "type": "integer" },
+        "cycleLabel": { "type": "string" },
+        "notes": { "type": "string" },
+        "dateMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "entryType", "category", "title", "amount", "dateMillis", "createdAt", "updatedAt"]
+    },
+    "FinancialRevenue": {
+      "title": "FinancialRevenue",
+      "description": "Catatan pendapatan penjualan hasil panen atau perlengkapan",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string" },
+        "title": { "type": "string" },
+        "amount": { "type": "integer" },
+        "orderId": { "type": "string" },
+        "cycleLabel": { "type": "string" },
+        "notes": { "type": "string" },
+        "dateMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "category", "title", "amount", "dateMillis", "createdAt", "updatedAt"]
+    },
+    "CartItem": {
+      "title": "CartItem",
+      "description": "Item keranjang belanja pengguna",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "mainCategory": { "type": "string" },
+        "unitPrice": { "type": "integer" },
+        "unit": { "type": "string" },
+        "quantity": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "productId", "productName", "sellerId", "sellerName", "mainCategory", "unitPrice", "unit", "quantity", "createdAt", "updatedAt"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "Notifikasi dalam aplikasi",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "body", "type", "read", "createdAt", "updatedAt"]
+    },
+    "WholesaleRequest": {
+      "title": "WholesaleRequest",
+      "description": "Permintaan pengadaan grosir B2B",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "buyerCompany": { "type": "string" },
+        "buyerType": { "type": "string" },
+        "cropNeeded": { "type": "string" },
+        "quantityKg": { "type": "integer" },
+        "targetPricePerKg": { "type": "integer" },
+        "deliverySchedule": { "type": "string" },
+        "area": { "type": "string" },
+        "farmerId": { "type": "string" },
+        "farmerOfferPrice": { "type": "integer" },
+        "status": { "type": "string", "enum": ["TERBUKA", "PENAWARAN", "DISEPAKATI", "SELESAI"] },
+        "open": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "buyerCompany", "buyerType", "cropNeeded", "quantityKg", "targetPricePerKg", "deliverySchedule", "area", "status", "open", "createdAt", "updatedAt"]
+    },
+    "ForumPost": {
+      "title": "ForumPost",
+      "description": "Postingan diskusi edukasi dan tanya jawab",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "topic": { "type": "string" },
+        "replyCount": { "type": "integer" },
+        "visible": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "title", "content", "topic", "replyCount", "visible", "createdAt", "updatedAt"]
+    },
+    "AdminSetting": {
+      "title": "AdminSetting",
+      "description": "Pengaturan komisi platform",
+      "type": "object",
+      "properties": {
+        "marketplaceCommissionPct": { "type": "number" },
+        "supplierCommissionPct": { "type": "number" },
+        "deliveryCommissionPct": { "type": "number" },
+        "consultationCommissionPct": { "type": "number" },
+        "wholesaleCommissionPct": { "type": "number" },
+        "publicConfig": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["marketplaceCommissionPct", "supplierCommissionPct", "deliveryCommissionPct", "consultationCommissionPct", "wholesaleCommissionPct", "publicConfig", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Profil akun pengguna"
+    },
+    "/users/{userId}/plants/{plantId}": {
+      "schema": { "$ref": "#/entities/HydroPlant" },
+      "description": "Tanaman hidroponik milik pengguna"
+    },
+    "/users/{userId}/maintenance_schedules/{scheduleId}": {
+      "schema": { "$ref": "#/entities/MaintenanceSchedule" },
+      "description": "Jadwal perawatan milik pengguna"
+    },
+    "/users/{userId}/plant_monitoring/{logId}": {
+      "schema": { "$ref": "#/entities/PlantMonitoringLog" },
+      "description": "Log monitoring pH, EC, TDS, dan pertumbuhan"
+    },
+    "/users/{userId}/harvests/{harvestId}": {
+      "schema": { "$ref": "#/entities/HarvestRecord" },
+      "description": "Riwayat panen budidaya"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/FinancialExpense" },
+      "description": "Catatan modal dan pengeluaran"
+    },
+    "/users/{userId}/revenues/{revenueId}": {
+      "schema": { "$ref": "#/entities/FinancialRevenue" },
+      "description": "Catatan pendapatan usaha"
+    },
+    "/users/{userId}/carts/{cartItemId}": {
+      "schema": { "$ref": "#/entities/CartItem" },
+      "description": "Keranjang belanja pengguna"
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/AppNotification" },
+      "description": "Notifikasi pengguna"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/MarketplaceProduct" },
+      "description": "Katalog produk marketplace"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/MarketplaceOrder" },
+      "description": "Transaksi pesanan marketplace"
+    },
+    "/wholesale_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/WholesaleRequest" },
+      "description": "Permintaan pengadaan grosir"
+    },
+    "/forum_posts/{postId}": {
+      "schema": { "$ref": "#/entities/ForumPost" },
+      "description": "Diskusi komunitas edukasi"
+    },
+    "/admin_settings/{settingId}": {
+      "schema": { "$ref": "#/entities/AdminSetting" },
+      "description": "Konfigurasi komisi dan aturan platform"
+    }
+  }
+}

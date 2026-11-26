@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">HydroGrow</string>
+    <string name="app_tagline">Kelola Kebun, Kembangkan Usaha, Temukan Pasar.</string>
+    <string name="nav_beranda">Beranda</string>
+    <string name="nav_kebun">Kebun</string>
+    <string name="nav_marketplace">Pasar</string>
+    <string name="nav_keuangan">Keuangan</string>
+    <string name="nav_profil">Profil</string>
+    <string name="demo_mode_badge">MODE DEMO</string>
+</resources>

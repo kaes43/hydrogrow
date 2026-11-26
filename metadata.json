@@ -1,0 +1,6 @@
+{
+  "name": "HydroGrow",
+  "description": "Smart Hydroponic Management & Local Marketplace - Kelola Kebun, Kembangkan Usaha, Temukan Pasar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
